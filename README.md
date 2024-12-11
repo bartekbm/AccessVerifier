@@ -1,2 +1,89 @@
-# ClientDataManager
-A Python microservice that validates incoming requests by checking if the source IP is within allowed AWS IP ranges for the Europe West region. It supports daily IP range updates and integrates with another microservice, forwarding unmodified HTTP headers for verification. Designed for enhanced security in Kubernetes environments.
+# AccessVerifier
+
+AccessVerifier is a Python microservice designed to enhance the security of the `ClientDataManager` service by validating incoming HTTP requests based on their originating IP addresses. It ensures only requests from allowed AWS IP ranges are processed.
+
+---
+
+## Features
+- **IP Validation:** Verifies if incoming requests originate from allowed IP ranges.
+- **Dynamic IP Updates:** Fetches and updates AWS IP ranges daily.
+- **REST API:** Provides a `/verify` endpoint for HTTP request validation.
+---
+
+## Requirements
+- Python 3.12+
+- Flask
+- Requests
+- Pytest (for testing)
+---
+
+## Setup Instructions
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/your-username/AccessVerifier.git
+cd AccessVerifier
+```
+
+### 2. Create a Virtual Environment
+For Linux/Mac:
+```bash
+python3.12 -m venv venv
+source venv/bin/activate
+```
+
+For Windows:
+
+```bash
+python -m venv venv
+venv\Scripts\activate
+```
+
+### 3. Install Dependencies
+Install production dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+To install dependencies for testing:
+```bash
+pip install -r requirements-test.txt
+```
+
+### 4. Running the Application
+Run Locally
+```bash
+python app.py
+```
+The service will be available at http://localhost:5000.
+
+Run with Docker
+```bash
+docker build -t access-verifier .
+docker run -d -p 5000:5000 --name access-verifier access-verifier
+```
+
+### 5. API Endpoints
+
+### `/verify`
+- **Method:** `POST`
+- **Description:** Validates the origin of the incoming HTTP request.
+- **Response:**
+  - `200 OK` if the request is allowed.
+  - `401 Unauthorized` if the request is denied.
+
+Example:
+```bash
+curl -X POST http://localhost:5000/verify -H "Content-Type: text/plain"
+```
+
+### 6. Testing
+Before running tests, make sure to install the required dependencies for testing:
+```bash
+pip install -r requirements-test.txt
+```
+
+Activate your virtual environment and run:
+```bash
+pytest tests/
+```
