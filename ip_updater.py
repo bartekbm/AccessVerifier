@@ -1,16 +1,18 @@
 import requests
 import json
+import os
 import schedule
 import time
 
 AWS_IP_RANGES_URL = "https://ip-ranges.amazonaws.com/ip-ranges.json"
-TARGET_REGION = "eu-west-1"
-IP_FILE = "allowed_ips.json"
+TARGET_REGION = os.getenv("AWS_REGION", "eu-west-1")
+IP_FILE = os.getenv("IP_FILE", "allowed_ips.json")
 
 def update_ip_ranges():
     """Fetches AWS IP ranges and filters them for the target region."""
-    response = requests.get(AWS_IP_RANGES_URL)
-    if response.status_code == 200:
+    try:
+        response = requests.get(AWS_IP_RANGES_URL)
+        response.raise_for_status()
         data = response.json()
         filtered_ips = [
             prefix['ip_prefix']
@@ -20,8 +22,8 @@ def update_ip_ranges():
         with open(IP_FILE, 'w') as f:
             json.dump(filtered_ips, f)
         print(f"Updated IP ranges for region: {TARGET_REGION}")
-    else:
-        raise Exception("Failed to fetch IP ranges")
+    except Exception as e:
+        print(f"Error updating IP ranges: {e}")
 
 def start_scheduler():
     """Starts a scheduler to update IP ranges daily."""
@@ -31,5 +33,5 @@ def start_scheduler():
         time.sleep(1)
 
 if __name__ == "__main__":
-    update_ip_ranges()
+    update_ip_ranges()  # Run once at startup
     start_scheduler()

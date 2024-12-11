@@ -18,3 +18,27 @@ spec:
         image: access-verifier:latest
         ports:
         - containerPort: 5000
+        env:
+        - name: IP_FILE
+          value: "/app/allowed_ips.json"
+        - name: AWS_REGION
+          valueFrom:
+            configMapKeyRef:
+              name: access-verifier-config
+              key: aws_region
+        - name: FORWARDED_HEADER
+          value: "X-Forwarded-For"
+        volumeMounts:
+        - name: ip-data
+          mountPath: /app/allowed_ips.json
+          subPath: allowed_ips.json
+      volumes:
+      - name: ip-data
+        emptyDir: {}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: access-verifier-config
+data:
+  aws_region: eu-west-1
