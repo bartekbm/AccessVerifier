@@ -21,7 +21,9 @@ def load_allowed_ips():
     except FileNotFoundError:
         print(f"{IP_FILE} not found, starting with an empty list.")
         allowed_ips = []
-
+def set_allowed_ips(ip_ranges):
+    global allowed_ips
+    allowed_ips = ip_ranges
 def get_client_ip():
     """Extracts client IP from request headers."""
     forwarded_ip = request.headers.get(FORWARDED_HEADER)
@@ -29,10 +31,11 @@ def get_client_ip():
         return forwarded_ip.split(",")[0].strip()  # Use the first IP in the chain
     return request.remote_addr
 
-def is_ip_allowed(ip):
-    """Checks if an IP is within the allowed ranges."""
+def is_ip_allowed(ip, ip_ranges=None):
+    """Check if the IP is within allowed ranges."""
+    ip_ranges = ip_ranges if ip_ranges is not None else allowed_ips
     try:
-        for ip_range in allowed_ips:
+        for ip_range in ip_ranges:
             if ipaddress.ip_address(ip) in ipaddress.ip_network(ip_range):
                 return True
         return False
