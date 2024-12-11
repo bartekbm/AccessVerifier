@@ -114,7 +114,7 @@ Ensure that the ingress endpoint is accessible and integrated with AccessVerifie
 curl -X POST http://<your-ingress-hostname>/verify -H "Content-Type: text/plain"
 ```
 #### 4. Logs and Debugging
-```bash
 If there are issues, check the logs of the AccessVerifier pod:
+```bash
+kubectl logs <pod-name>
 ```
-
