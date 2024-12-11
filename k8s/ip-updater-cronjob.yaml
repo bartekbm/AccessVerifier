@@ -1,0 +1,29 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ip-updater
+spec:
+  schedule: "0 0 * * *"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: ip-updater
+        spec:
+          containers:
+          - name: ip-updater
+            image: ip-updater:latest
+            env:
+            - name: IP_FILE
+              value: "/app/allowed_ips.json"
+            - name: AWS_REGION
+              value: "eu-west-1"
+            volumeMounts:
+            - mountPath: /app
+              name: ip-volume
+          restartPolicy: OnFailure
+          volumes:
+          - name: ip-volume
+            persistentVolumeClaim:
+              claimName: ip-volume-claim

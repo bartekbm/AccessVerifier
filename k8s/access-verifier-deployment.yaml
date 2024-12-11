@@ -2,7 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: access-verifier
-  namespace: default
+  labels:
+    app: access-verifier
 spec:
   replicas: 2
   selector:
@@ -15,30 +16,18 @@ spec:
     spec:
       containers:
       - name: access-verifier
-        image: access-verifier:latest
+        image: your-access-verifier-image:latest
         ports:
         - containerPort: 5000
         env:
         - name: IP_FILE
           value: "/app/allowed_ips.json"
-        - name: AWS_REGION
-          valueFrom:
-            configMapKeyRef:
-              name: access-verifier-config
-              key: aws_region
         - name: FORWARDED_HEADER
           value: "X-Forwarded-For"
         volumeMounts:
-        - name: ip-data
-          mountPath: /app/allowed_ips.json
-          subPath: allowed_ips.json
+        - mountPath: /app
+          name: ip-volume
       volumes:
-      - name: ip-data
-        emptyDir: {}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: access-verifier-config
-data:
-  aws_region: eu-west-1
+      - name: ip-volume
+        persistentVolumeClaim:
+          claimName: ip-volume-claim
