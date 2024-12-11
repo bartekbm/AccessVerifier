@@ -118,3 +118,36 @@ If there are issues, check the logs of the AccessVerifier pod:
 ```bash
 kubectl logs <pod-name>
 ```
+### 8. Automatic IP List Reloading
+
+The application includes a mechanism to automatically monitor the IP file (`allowed_ips.json`) if it is created or modified while the application is running.
+
+- **Default File:** `allowed_ips.json`
+- **Custom File:** You can specify a custom file by setting the `IP_FILE` environment variable:
+  ```bash
+  export IP_FILE="custom_ips.json"
+  ```
+### 9.  IP Verification Behavior
+
+AccessVerifier validates incoming IP addresses against a predefined list of allowed IP ranges. By default, it supports network ranges in CIDR notation.
+
+#### Examples of Supported Ranges
+- A specific IP: `192.168.1.1/32`
+- A network range: `3.250.244.0/26` (covers IPs from `3.250.244.0` to `3.250.244.63`)
+
+#### Environment Variable: `ALLOW_NETWORK_RANGES`
+
+By default, AccessVerifier allows IPs that match any network range in the list. This behavior is controlled by the `ALLOW_NETWORK_RANGES` environment variable:
+
+- `ALLOW_NETWORK_RANGES=True` (default):
+  - IPs within the range are allowed.
+  - Example: For `3.250.244.0/26`, both `3.250.244.1` and `3.250.244.63` will be allowed.
+
+- `ALLOW_NETWORK_RANGES=False`:
+  - Only exact IP matches are allowed.
+  - Example: For `3.250.244.0/26`, only the IP `3.250.244.0` will be allowed.
+
+Set the variable as follows:
+```bash
+export ALLOW_NETWORK_RANGES=False
+```

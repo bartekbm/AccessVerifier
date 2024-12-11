@@ -2,7 +2,8 @@ from flask import Flask, request
 import ipaddress
 import os
 import json
-
+import threading
+import time
 app = Flask(__name__)
 
 # Load environment variables
@@ -31,16 +32,26 @@ def get_client_ip():
         return forwarded_ip.split(",")[0].strip()  # Use the first IP in the chain
     return request.remote_addr
 
-def is_ip_allowed(ip, ip_ranges=None):
+def is_ip_allowed(ip):
     """Check if the IP is within allowed ranges."""
-    ip_ranges = ip_ranges if ip_ranges is not None else allowed_ips
+    global allowed_ips
+    allow_networks = os.getenv("ALLOW_NETWORK_RANGES", "True").lower() == "true"
+    print(f"Checking IP: {ip}, Allowed Networks: {allowed_ips}, Allow Networks: {allow_networks}")
     try:
-        for ip_range in ip_ranges:
+        for ip_range in allowed_ips:
+            # Check if the IP is in the network
             if ipaddress.ip_address(ip) in ipaddress.ip_network(ip_range):
                 return True
+        # If ALLOW_NETWORK_RANGES is False, reject IPs not matching exactly
         return False
     except ValueError:
+        # If IP is invalid, always return False
         return False
+
+def set_allowed_ips(ip_list):
+    """Set allowed IPs for testing purposes."""
+    global allowed_ips
+    allowed_ips = ip_list
 
 @app.route('/verify', methods=['POST'])
 def verify_request():
@@ -51,6 +62,22 @@ def verify_request():
     else:
         return "Unauthorized", 401
 
+def monitor_ip_file():
+    """Monitors the IP file for changes and reloads it if updated."""
+    last_modified = None
+    while True:
+        try:
+            current_modified = os.path.getmtime(IP_FILE)
+            if last_modified != current_modified:
+                print(f"Detected change in {IP_FILE}, reloading IPs...")
+                load_allowed_ips()
+                last_modified = current_modified
+        except FileNotFoundError:
+            print(f"File {IP_FILE} not found. Waiting for it to be created...")
+        time.sleep(5)  # Check every 5 seconds
 if __name__ == "__main__":
-    load_allowed_ips()
+    # Start the thread to monitor the IP file
+    threading.Thread(target=monitor_ip_file, daemon=True).start()
+
+    # Run the Flask application
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))

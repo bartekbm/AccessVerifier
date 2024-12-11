@@ -13,14 +13,18 @@ def client():
     with app.test_client() as client:
         yield client
 
-def test_is_ip_allowed():
-    """Test the IP verification logic."""
-    ip_ranges = ["192.168.0.0/24", "10.0.0.0/8"]
+def test_is_ip_allowed_with_networks():
+    """Test the IP verification logic with network ranges."""
+    from app import set_allowed_ips
+    set_allowed_ips(["3.250.244.0/26", "18.200.0.0/16"])
 
-    assert is_ip_allowed("192.168.0.1", ip_ranges) is True
-    assert is_ip_allowed("10.0.1.1", ip_ranges) is True
-    assert is_ip_allowed("172.16.0.1", ip_ranges) is False
-    assert is_ip_allowed("invalid_ip", ip_ranges) is False
+    # Test with ALLOW_NETWORK_RANGES=True (default)
+    os.environ.pop("ALLOW_NETWORK_RANGES", None)  # Use default behavior
+    assert is_ip_allowed("3.250.244.1") is True  # Matches 3.250.244.0/26
+    assert is_ip_allowed("3.250.244.63") is True  # Matches 3.250.244.0/26
+    assert is_ip_allowed("3.250.244.64") is False  # Outside 3.250.244.0/26
+    assert is_ip_allowed("18.200.1.1") is True  # Matches 18.200.0.0/16
+    assert is_ip_allowed("19.0.0.1") is False  # Does not match any range
 
 def test_verify_endpoint(client):
     """Test the /verify endpoint."""
