@@ -6,7 +6,7 @@ AccessVerifier is a Python microservice designed to enhance the security of the 
 
 ## Features
 - **IP Validation:** Verifies if incoming requests originate from allowed IP ranges.
-- **Dynamic IP Updates:** Fetches and updates AWS IP ranges daily via a separate updater service.
+- **Dynamic IP Updates:** The service fetches and updates AWS IP ranges daily using a built-in updater process.
 - **REST API:** Provides a `/verify` endpoint for HTTP request validation.
 
 ---
@@ -57,45 +57,56 @@ pip install -r requirements-test.txt
 
 ## Running the Application Locally
 
-### 1. Start the AccessVerifier Service
+### 1. Start the Service and Updater
+Both the AccessVerifier service and the IP updater process run concurrently. Use the following command:
 ```bash
 python app.py
 ```
 The service will be available at `http://localhost:5000`.
 
-### 2. Start the IP Updater
+---
+
+## Testing Locally with curl
+
+### 1. Test the `/verify` Endpoint
+Once the service is running locally, you can test the `/verify` endpoint using `curl`. Replace `<IP_ADDRESS>` with the address you want to verify.
+
+#### Example:
 ```bash
-python ip_updater.py
+curl -X POST http://localhost:5000/verify -H "X-Forwarded-For: <IP_ADDRESS>"
 ```
+
+#### Expected Responses:
+- **200 OK**: The IP address is allowed.
+- **401 Unauthorized**: The IP address is not allowed.
+
+---
+
+### 2. Test the IP Updater
+The IP updater updates the list of allowed IPs daily by default. To test this manually:
+1. Ensure the environment variable `AWS_REGION` is correctly set (default: `eu-west-1`).
+2. Run the updater directly:
+   ```bash
+   python ip_updater.py
+   ```
+3. Check if the file `allowed_ips.json` has been updated with the new IP ranges.
 
 ---
 
 ## Docker Setup
 
-### 1. Build Docker Images
-There are two separate Dockerfiles for the AccessVerifier service and the IP updater.
-
-#### Build AccessVerifier Image
+### 1. Build Docker Image
+The Dockerfile handles both the AccessVerifier service and the IP updater process. Build the Docker image as follows:
 ```bash
-docker build -f Dockerfile.app -t access-verifier .
+docker build -t access-verifier .
 ```
 
-#### Build IP Updater Image
-```bash
-docker build -f Dockerfile.updater -t ip-updater .
-```
-
-### 2. Run Docker Containers
-
-#### Start AccessVerifier
+### 2. Run the Docker Container
+Run the container using:
 ```bash
 docker run -d -p 5000:5000 --name access-verifier access-verifier
 ```
-
-#### Start IP Updater
-```bash
-docker run -d --name ip-updater ip-updater
-```
+The service will be accessible at `http://localhost:5000`.
 
 ---
 
@@ -112,24 +123,24 @@ docker run -d --name ip-updater ip-updater
 1. **Apply Kubernetes Manifests:**
    Navigate to the `k8s` directory and apply the manifests:
    ```bash
-   kubectl apply -f k8s/access-verifier-deployment.yaml
-   kubectl apply -f k8s/access-verifier-service.yaml
-   kubectl apply -f k8s/ip-updater-cronjob.yaml
-   kubectl apply -f k8s/persistent-volume.yaml
+   kubectl apply -f access-verifier-deployment.yaml
+   kubectl apply -f access-verifier-service.yaml
+   kubectl apply -f clientdata-ingress.yaml
+   kubectl apply -f cronjob-update-allowed-ips.yaml
    ```
 
 2. **Verify the Deployment:**
-   Check if the pods, services, and CronJobs are running:
+   Check if the pods, services, and ingress are running:
    ```bash
    kubectl get pods
    kubectl get services
-   kubectl get cronjobs
+   kubectl get ingress
    ```
 
 3. **Test the Service:**
    - Test AccessVerifier:
      ```bash
-     curl -X POST http://<external-ip>:5000/verify -H "Content-Type: text/plain"
+     curl -X POST http://<external-ip>/verify -H "Content-Type: text/plain"
      ```
    - Verify the CronJob's success by checking logs:
      ```bash
@@ -140,10 +151,6 @@ docker run -d --name ip-updater ip-updater
    - Check AccessVerifier logs:
      ```bash
      kubectl logs <access-verifier-pod>
-     ```
-   - Check IP updater logs:
-     ```bash
-     kubectl logs <ip-updater-pod>
      ```
 
 ---
