@@ -92,7 +92,7 @@ pytest tests/
 - A running Kubernetes cluster.
 - `kubectl` configured to interact with the cluster.
 
-### 1. Apply Kubernetes Manifests
+#### 1. Apply Kubernetes Manifests
 Navigate to the `k8s` directory and apply the manifests:
 ```bash
 kubectl apply -f k8s/access-verifier-deployment.yaml
@@ -100,7 +100,7 @@ kubectl apply -f k8s/access-verifier-service.yaml
 kubectl apply -f k8s/clientdata-ingress.yaml
 kubectl apply -f k8s/cronjob-update-allowed-ips.yaml
 ```
-### 2. Verify the Deployment
+#### 2. Verify the Deployment
 Check if the pods, services, and ingress are running:
 ```bash
 kubectl get pods
@@ -108,12 +108,12 @@ kubectl get services
 kubectl get ingress
 ```
 
-### 3. Test the Ingress
+#### 3. Test the Ingress
 Ensure that the ingress endpoint is accessible and integrated with AccessVerifier:
 ```bash
 curl -X POST http://<your-ingress-hostname>/verify -H "Content-Type: text/plain"
 ```
-### 4. Logs and Debugging
+#### 4. Logs and Debugging
 ```bash
 If there are issues, check the logs of the AccessVerifier pod:
 ```
