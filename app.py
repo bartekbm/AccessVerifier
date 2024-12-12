@@ -22,6 +22,7 @@ def get_client_ip():
 def verify_request():
     """Verifies whether the incoming IP address is allowed."""
     client_ip = get_client_ip()
+    print(f"Client IP: {client_ip}")
     if ip_manager.is_ip_allowed(client_ip):
         return "OK", 200
     else:
