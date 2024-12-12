@@ -9,6 +9,7 @@ class IPManager:
     def __init__(self, ip_file=None):
         self.ip_file = ip_file
         self.ip_addresses = []
+        self.allow_network_ranges = os.getenv("ALLOW_NETWORK_RANGES", "True").lower() == "true"
         self._updater_run = False
         if ip_file:
             self.load_allowed_ips()
@@ -72,7 +73,7 @@ class IPManager:
         ip = ipaddress.ip_address(ip_address)
         for allowed_ip in self.ip_addresses:
             if '/' in allowed_ip:
-                if ip in ipaddress.ip_network(allowed_ip):
+                if self.allow_network_ranges and ip in ipaddress.ip_network(allowed_ip):
                     return True
             elif ip == ipaddress.ip_address(allowed_ip):
                 return True
