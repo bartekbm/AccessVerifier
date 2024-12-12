@@ -75,6 +75,21 @@ To set the update time for the scheduled task, use the `UPDATE_TIME` environment
 export UPDATE_TIME="02:00"
 ```
 
+To specify a custom IP file, use the `IP_FILE` environment variable:
+```bash
+export IP_FILE="custom_ips.json"
+```
+
+To specify the AWS region, use the `AWS_REGION` environment variable:
+```bash
+export AWS_REGION="us-east-1"
+```
+
+To specify the forwarded header, use the `FORWARDED_HEADER` environment variable:
+```bash
+export FORWARDED_HEADER="X-Forwarded-For"
+```
+
 ---
 
 ## Testing Locally with curl
