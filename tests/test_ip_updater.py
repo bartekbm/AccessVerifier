@@ -6,7 +6,7 @@ import pytest
 import json
 from unittest.mock import patch
 from ip_updater import update_ip_ranges
-from app import IPManager
+from ip_manager import IPManager
 
 AWS_IP_RANGES_MOCK = {
     "prefixes": [
