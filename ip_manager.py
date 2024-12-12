@@ -1,6 +1,5 @@
 import json
 import ipaddress
-import subprocess
 import os
 import time
 from ip_updater import update_ip_ranges
@@ -45,16 +44,13 @@ class IPManager:
 
     def load_allowed_ips(self):
         if self._updater_run:
-            print(f"Failed to generate {self.ip_file} after running ip_updater.")
             self.ip_addresses = []
             return
 
         try:
             with open(self.ip_file, 'r') as f:
                 self.ip_addresses = json.load(f)
-                
         except FileNotFoundError:
-            print(f"{self.ip_file} not found. Running ip_updater to generate the file.")
             update_ip_ranges(self.ip_file)
             self._updater_run = True
             for _ in range(10):  # Wait for the file to be created
@@ -62,7 +58,6 @@ class IPManager:
                     break
                 time.sleep(1)
             if not os.path.exists(self.ip_file):
-                print(f"Failed to generate {self.ip_file}. Please check the ip_updater.")
                 self.ip_addresses = []
             else:
                 with open(self.ip_file, 'r') as f:
@@ -71,10 +66,23 @@ class IPManager:
 
     def is_ip_allowed(self, ip_address):
         ip = ipaddress.ip_address(ip_address)
+
         for allowed_ip in self.ip_addresses:
             if '/' in allowed_ip:
-                if self.allow_network_ranges and ip in ipaddress.ip_network(allowed_ip):
-                    return True
-            elif ip == ipaddress.ip_address(allowed_ip):
-                return True
+                if not self.allow_network_ranges:
+                    continue
+                try:
+                    network = ipaddress.ip_network(allowed_ip, strict=False)
+                    if ip in network:
+                        return True
+                except ValueError:
+                    continue
+            else:
+                try:
+                    allowed_ip_obj = ipaddress.ip_address(allowed_ip)
+                    if ip == allowed_ip_obj:
+                        return True
+                except ValueError:
+                    continue
+
         return False
