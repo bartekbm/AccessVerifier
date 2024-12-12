@@ -3,15 +3,18 @@ import ipaddress
 import os
 import time
 from ip_updater import update_ip_ranges
-
 class IPManager:
     def __init__(self, ip_file=None):
         self.ip_file = ip_file
         self.ip_addresses = []
-        self.allow_network_ranges = os.getenv("ALLOW_NETWORK_RANGES", "True").lower() == "true"
         self._updater_run = False
         if ip_file:
             self.load_allowed_ips()
+
+    @property
+    def allow_network_ranges(self):
+        """Dynamically fetch the ALLOW_NETWORK_RANGES environment variable."""
+        return os.getenv("ALLOW_NETWORK_RANGES", "True").lower() == "true"
 
     def add_ip(self, ip_address):
         if self.validate_ip(ip_address):
