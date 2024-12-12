@@ -2,7 +2,7 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-COPY app.py ip_updater.py requirements.txt ./
+COPY app.py ip_updater.py ip_manager.py requirements.txt ./
 
 RUN pip install -r requirements.txt
 
@@ -12,4 +12,5 @@ ENV AWS_REGION=eu-west-1
 ENV PORT=5000
 ENV FORWARDED_HEADER=X-Forwarded-For
 
-CMD ["sh", "-c", "python ip_updater.py & python app.py"]
+CMD ["python", "app.py"]
+

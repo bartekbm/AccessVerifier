@@ -8,6 +8,7 @@ AccessVerifier is a Python microservice designed to enhance the security of the 
 - **IP Validation:** Verifies if incoming requests originate from allowed IP ranges.
 - **Dynamic IP Updates:** The service fetches and updates AWS IP ranges daily using a built-in updater process.
 - **REST API:** Provides a `/verify` endpoint for HTTP request validation.
+- **Automatic IP List Reloading:** Monitors the IP file for changes and reloads it if updated.
 
 ---
 
@@ -57,12 +58,37 @@ pip install -r requirements-test.txt
 
 ## Running the Application Locally
 
-### 1. Start the Service and Updater
-Both the AccessVerifier service and the IP updater process run concurrently. Use the following command:
+### 1. Start the Service
+Run the Flask application with the scheduled IP updater:
 ```bash
 python app.py
 ```
 The service will be available at `http://localhost:5000`.
+
+To control the scheduled task, set the `ENABLE_SCHEDULED_UPDATER` environment variable:
+```bash
+export ENABLE_SCHEDULED_UPDATER=True
+```
+
+To set the update time for the scheduled task, use the `UPDATE_TIME` environment variable:
+```bash
+export UPDATE_TIME="02:00"
+```
+
+To specify a custom IP file, use the `IP_FILE` environment variable:
+```bash
+export IP_FILE="custom_ips.json"
+```
+
+To specify the AWS region, use the `AWS_REGION` environment variable:
+```bash
+export AWS_REGION="us-east-1"
+```
+
+To specify the forwarded header, use the `FORWARDED_HEADER` environment variable:
+```bash
+export FORWARDED_HEADER="X-Forwarded-For"
+```
 
 ---
 
@@ -107,6 +133,21 @@ Run the container using:
 docker run -d -p 5000:5000 --name access-verifier access-verifier
 ```
 The service will be accessible at `http://localhost:5000`.
+
+To control the scheduled task, set the `ENABLE_SCHEDULED_UPDATER` environment variable:
+```bash
+docker run -d -p 5000:5000 --name access-verifier -e ENABLE_SCHEDULED_UPDATER=True access-verifier
+```
+
+To set the update time for the scheduled task, use the `UPDATE_TIME` environment variable:
+```bash
+docker run -d -p 5000:5000 --name access-verifier -e ENABLE_SCHEDULED_UPDATER=True -e UPDATE_TIME="02:00" access-verifier
+```
+
+To run the container with additional environment variables, use:
+```bash
+docker run -d -p 5000:5000 --name access-verifier -e ENABLE_SCHEDULED_UPDATER=True -e UPDATE_TIME="02:00" -e ALLOW_NETWORK_RANGES=False access-verifier
+```
 
 ---
 
@@ -205,3 +246,4 @@ Set the variable as follows:
 ```bash
 export ALLOW_NETWORK_RANGES=False
 ```
+
