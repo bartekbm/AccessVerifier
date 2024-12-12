@@ -6,8 +6,9 @@ AccessVerifier is a Python microservice designed to enhance the security of the 
 
 ## Features
 - **IP Validation:** Verifies if incoming requests originate from allowed IP ranges.
-- **Dynamic IP Updates:** Fetches and updates AWS IP ranges daily.
+- **Dynamic IP Updates:** The service fetches and updates AWS IP ranges daily using a built-in updater process.
 - **REST API:** Provides a `/verify` endpoint for HTTP request validation.
+
 ---
 
 ## Requirements
@@ -15,6 +16,7 @@ AccessVerifier is a Python microservice designed to enhance the security of the 
 - Flask
 - Requests
 - Pytest (for testing)
+
 ---
 
 ## Setup Instructions
@@ -26,99 +28,148 @@ cd AccessVerifier
 ```
 
 ### 2. Create a Virtual Environment
-For Linux/Mac:
+
+#### For Linux/Mac:
 ```bash
 python3.12 -m venv venv
 source venv/bin/activate
 ```
 
-For Windows:
-
+#### For Windows:
 ```bash
 python -m venv venv
-venv\Scripts\activate
+venvScriptsactivate
 ```
 
 ### 3. Install Dependencies
-Install production dependencies:
+
+#### Install production dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-To install dependencies for testing:
+#### Install dependencies for testing:
 ```bash
 pip install -r requirements-test.txt
 ```
 
-### 4. Running the Application
-Run Locally
+---
+
+## Running the Application Locally
+
+### 1. Start the Service and Updater
+Both the AccessVerifier service and the IP updater process run concurrently. Use the following command:
 ```bash
 python app.py
 ```
-The service will be available at http://localhost:5000.
+The service will be available at `http://localhost:5000`.
 
-Run with Docker
+---
+
+## Testing Locally with curl
+
+### 1. Test the `/verify` Endpoint
+Once the service is running locally, you can test the `/verify` endpoint using `curl`. Replace `<IP_ADDRESS>` with the address you want to verify.
+
+#### Example:
+```bash
+curl -X POST http://localhost:5000/verify -H "X-Forwarded-For: <IP_ADDRESS>"
+```
+
+#### Expected Responses:
+- **200 OK**: The IP address is allowed.
+- **401 Unauthorized**: The IP address is not allowed.
+
+---
+
+### 2. Test the IP Updater
+The IP updater updates the list of allowed IPs daily by default. To test this manually:
+1. Ensure the environment variable `AWS_REGION` is correctly set (default: `eu-west-1`).
+2. Run the updater directly:
+   ```bash
+   python ip_updater.py
+   ```
+3. Check if the file `allowed_ips.json` has been updated with the new IP ranges.
+
+---
+
+## Docker Setup
+
+### 1. Build Docker Image
+The Dockerfile handles both the AccessVerifier service and the IP updater process. Build the Docker image as follows:
 ```bash
 docker build -t access-verifier .
+```
+
+### 2. Run the Docker Container
+Run the container using:
+```bash
 docker run -d -p 5000:5000 --name access-verifier access-verifier
 ```
+The service will be accessible at `http://localhost:5000`.
 
-### 5. API Endpoints
+---
 
-### `/verify`
-- **Method:** `POST`
-- **Description:** Validates the origin of the incoming HTTP request.
-- **Response:**
-  - `200 OK` if the request is allowed.
-  - `401 Unauthorized` if the request is denied.
+## Kubernetes Deployment
 
-Example:
-```bash
-curl -X POST http://localhost:5000/verify -H "Content-Type: text/plain"
-```
+**This section has not been tested.**
 
-### 6. Testing
+### Prerequisites
+- A running Kubernetes cluster.
+- `kubectl` configured to interact with the cluster.
+
+### Deployment Steps
+
+1. **Apply Kubernetes Manifests:**
+   Navigate to the `k8s` directory and apply the manifests:
+   ```bash
+   kubectl apply -f access-verifier-deployment.yaml
+   kubectl apply -f access-verifier-service.yaml
+   kubectl apply -f clientdata-ingress.yaml
+   kubectl apply -f cronjob-update-allowed-ips.yaml
+   ```
+
+2. **Verify the Deployment:**
+   Check if the pods, services, and ingress are running:
+   ```bash
+   kubectl get pods
+   kubectl get services
+   kubectl get ingress
+   ```
+
+3. **Test the Service:**
+   - Test AccessVerifier:
+     ```bash
+     curl -X POST http://<external-ip>/verify -H "Content-Type: text/plain"
+     ```
+   - Verify the CronJob's success by checking logs:
+     ```bash
+     kubectl logs <job-pod-name>
+     ```
+
+4. **Logs and Debugging:**
+   - Check AccessVerifier logs:
+     ```bash
+     kubectl logs <access-verifier-pod>
+     ```
+
+---
+
+## Testing
+
 Before running tests, make sure to install the required dependencies for testing:
 ```bash
 pip install -r requirements-test.txt
 ```
 
-Activate your virtual environment and run:
+Run tests:
 ```bash
 pytest tests/
 ```
-### 7. Kubernetes Deployment
-### Prerequisites
-- A running Kubernetes cluster.
-- `kubectl` configured to interact with the cluster.
 
-#### 1. Apply Kubernetes Manifests
-Navigate to the `k8s` directory and apply the manifests:
-```bash
-kubectl apply -f k8s/access-verifier-deployment.yaml
-kubectl apply -f k8s/access-verifier-service.yaml
-kubectl apply -f k8s/clientdata-ingress.yaml
-kubectl apply -f k8s/cronjob-update-allowed-ips.yaml
-```
-#### 2. Verify the Deployment
-Check if the pods, services, and ingress are running:
-```bash
-kubectl get pods
-kubectl get services
-kubectl get ingress
-```
+---
 
-#### 3. Test the Ingress
-Ensure that the ingress endpoint is accessible and integrated with AccessVerifier:
-```bash
-curl -X POST http://<your-ingress-hostname>/verify -H "Content-Type: text/plain"
-```
-#### 4. Logs and Debugging
-If there are issues, check the logs of the AccessVerifier pod:
-```bash
-kubectl logs <pod-name>
-```
-### 8. Automatic IP List Reloading
+## Automatic IP List Reloading
 
 The application includes a mechanism to automatically monitor the IP file (`allowed_ips.json`) if it is created or modified while the application is running.
 
@@ -127,15 +178,18 @@ The application includes a mechanism to automatically monitor the IP file (`allo
   ```bash
   export IP_FILE="custom_ips.json"
   ```
-### 9.  IP Verification Behavior
+
+---
+
+## IP Verification Behavior
 
 AccessVerifier validates incoming IP addresses against a predefined list of allowed IP ranges. By default, it supports network ranges in CIDR notation.
 
-#### Examples of Supported Ranges
+### Examples of Supported Ranges
 - A specific IP: `192.168.1.1/32`
 - A network range: `3.250.244.0/26` (covers IPs from `3.250.244.0` to `3.250.244.63`)
 
-#### Environment Variable: `ALLOW_NETWORK_RANGES`
+### Environment Variable: `ALLOW_NETWORK_RANGES`
 
 By default, AccessVerifier allows IPs that match any network range in the list. This behavior is controlled by the `ALLOW_NETWORK_RANGES` environment variable:
 
